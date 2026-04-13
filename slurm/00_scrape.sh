@@ -21,5 +21,4 @@ python -m open_course_rag_benchmark.scrape_openstax \
   --book introduction-philosophy \
   --output "$SCRATCH_ROOT/raw/openstax_philosophy"
 
-find "$SCRATCH_ROOT/raw" -type f | head -50
-
+find "$SCRATCH_ROOT/raw" -type f | head -50 || true
