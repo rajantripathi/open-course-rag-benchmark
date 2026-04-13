@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 from .io_utils import read_jsonl, write_jsonl
@@ -32,6 +34,19 @@ def course_name(course_id: str) -> str:
     }.get(course_id, course_id)
 
 
+def extract_json_array(text: str) -> list[dict] | None:
+    match = re.search(r"\[\s*\{.*\}\s*\]", text, flags=re.DOTALL)
+    if not match:
+        return None
+    try:
+        payload = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, list):
+        return None
+    return payload
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Generate candidate questions from chunk passages.")
     parser.add_argument("--chunks", type=Path, required=True)
@@ -43,21 +58,42 @@ def main(argv: list[str] | None = None) -> None:
 
     chunks = read_jsonl(args.chunks)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    model = AutoModelForCausalLM.from_pretrained(args.model_name)
-    generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model_name,
+        torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+        device_map="auto",
+    )
+    generator = pipeline(
+        "text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        return_full_text=False,
+    )
     counts: dict[str, int] = {}
     rows: list[dict] = []
     for chunk in chunks[:: args.stride]:
         if counts.get(chunk["course_id"], 0) >= args.per_course_target:
             continue
         prompt = PROMPT.format(course_name=course_name(chunk["course_id"]), chunk_text=chunk["text"])
-        text = generator(prompt, max_new_tokens=400, do_sample=False)[0]["generated_text"]
-        payload = text[len(prompt):].strip() if text.startswith(prompt) else text.strip()
-        try:
-            items = json.loads(payload)
-        except json.JSONDecodeError:
+        text = generator(
+            prompt,
+            max_new_tokens=400,
+            do_sample=False,
+            temperature=None,
+            pad_token_id=tokenizer.eos_token_id,
+        )[0]["generated_text"].strip()
+        items = extract_json_array(text)
+        if items is None:
             continue
         for idx, item in enumerate(items):
+            if counts.get(chunk["course_id"], 0) >= args.per_course_target:
+                break
+            if not isinstance(item, dict):
+                continue
+            if not {"question_type", "question_text", "reference_answer"} <= set(item):
+                continue
             rows.append(
                 {
                     "candidate_id": f"{chunk['chunk_id']}_{idx}",
@@ -71,4 +107,3 @@ def main(argv: list[str] | None = None) -> None:
             counts[chunk["course_id"]] = counts.get(chunk["course_id"], 0) + 1
     write_jsonl(args.output, rows)
     print(f"Wrote {len(rows)} candidates to {args.output}")
-

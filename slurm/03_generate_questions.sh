@@ -12,5 +12,10 @@ set -euo pipefail
 SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/u6ef/rajantripathi.u6ef/open-course-rag-benchmark}"
 cd "$SCRATCH_ROOT/repo"
 source scripts/isambard/slurm_env.sh
-ocrb generate-questions --chunks "$SCRATCH_ROOT/processed/chunks.jsonl" --output "$SCRATCH_ROOT/benchmark_candidates/candidates.jsonl"
+export HF_HOME="$SCRATCH_ROOT/cache/huggingface"
+export TRANSFORMERS_CACHE="$HF_HOME"
+mkdir -p "$HF_HOME"
 
+python -u -m open_course_rag_benchmark.generate_questions \
+  --chunks "$SCRATCH_ROOT/processed/chunks.jsonl" \
+  --output "$SCRATCH_ROOT/benchmark_candidates/candidates.jsonl"
