@@ -8,9 +8,13 @@ LOCAL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 rsync -avz \
   --exclude='.git' \
   --exclude='.venv' \
+  --exclude='.venv311' \
+  --exclude='.pytest_cache' \
+  --exclude='__pycache__' \
+  --exclude='*.pyc' \
   --exclude='data/raw/downloads' \
   --exclude='data/processed/*.jsonl' \
+  --exclude='results/**/*.jsonl' \
   --exclude='results/**/*.json' \
   --exclude='results/**/*.csv' \
   "$LOCAL_ROOT/" "$REMOTE_HOST:$REMOTE_ROOT/"
-
