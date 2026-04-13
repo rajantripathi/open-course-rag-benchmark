@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Generate candidate questions from chunk passages.")
     parser.add_argument("--chunks", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--model-name", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model-name", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--stride", type=int, default=1)
     parser.add_argument("--per-course-target", type=int, default=200)
     args = parser.parse_args(argv)

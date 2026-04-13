@@ -24,7 +24,7 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Translate curated questions and answers to Uzbek.")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--model-name", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model-name", default="Qwen/Qwen2.5-3B-Instruct")
     args = parser.parse_args(argv)
     records = read_jsonl(args.input)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
