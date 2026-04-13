@@ -63,13 +63,13 @@ def main(argv: list[str] | None = None) -> None:
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
         torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
-        device_map="auto",
     )
     generator = pipeline(
         "text-generation",
         model=model,
         tokenizer=tokenizer,
         return_full_text=False,
+        device=0 if torch.cuda.is_available() else -1,
     )
     counts: dict[str, int] = {}
     rows: list[dict] = []

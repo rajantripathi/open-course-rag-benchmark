@@ -15,6 +15,7 @@ source scripts/isambard/slurm_env.sh
 export HF_HOME="$SCRATCH_ROOT/cache/huggingface"
 export TRANSFORMERS_CACHE="$HF_HOME"
 mkdir -p "$HF_HOME"
+mkdir -p "$SCRATCH_ROOT/benchmark_candidates"
 
 python -u -m open_course_rag_benchmark.generate_questions \
   --chunks "$SCRATCH_ROOT/processed/chunks.jsonl" \
