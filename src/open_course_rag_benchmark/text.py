@@ -50,41 +50,52 @@ def chunk_words(words: list[str], chunk_size: int, overlap: int) -> list[list[st
     return chunks
 
 
+def split_long_sentence(sentence: str, chunk_size: int, overlap: int) -> list[str]:
+    words = normalize_whitespace(sentence).split()
+    if not words:
+        return []
+    return [" ".join(chunk) for chunk in chunk_words(words, chunk_size, overlap)]
+
+
 def chunk_sentences(text: str, chunk_size: int, overlap: int) -> list[str]:
     sentences = sentence_split(text)
     sentence_tokens = [tokenize(sentence) for sentence in sentences]
+    token_counts = [len(tokens) for tokens in sentence_tokens]
     chunks: list[str] = []
-    current_sentences: list[str] = []
-    current_tokens = 0
-    i = 0
-    while i < len(sentences):
-        sentence = sentences[i]
-        token_count = len(sentence_tokens[i])
-        if not current_sentences:
-            current_sentences.append(sentence)
-            current_tokens = token_count
-            i += 1
+    start = 0
+    while start < len(sentences):
+        sentence = sentences[start]
+        token_count = token_counts[start]
+        if token_count > chunk_size:
+            chunks.extend(split_long_sentence(sentence, chunk_size, overlap))
+            start += 1
             continue
-        if current_tokens + token_count <= chunk_size:
-            current_sentences.append(sentence)
-            current_tokens += token_count
-            i += 1
-            continue
-        chunks.append(" ".join(current_sentences))
-        overlap_sentences: list[str] = []
-        overlap_tokens = 0
-        for back_sentence in reversed(current_sentences):
-            back_tokens = len(tokenize(back_sentence))
-            if overlap_tokens + back_tokens > overlap and overlap_sentences:
+        end = start
+        total = 0
+        while end < len(sentences):
+            next_tokens = token_counts[end]
+            if total + next_tokens > chunk_size:
                 break
-            overlap_sentences.insert(0, back_sentence)
+            total += next_tokens
+            end += 1
+        if end == start:
+            chunks.extend(split_long_sentence(sentence, chunk_size, overlap))
+            start += 1
+            continue
+        chunks.append(" ".join(sentences[start:end]))
+        if end >= len(sentences):
+            break
+        overlap_tokens = 0
+        next_start = end
+        for idx in range(end - 1, start - 1, -1):
+            back_tokens = token_counts[idx]
+            if overlap_tokens + back_tokens > overlap and overlap_tokens > 0:
+                break
             overlap_tokens += back_tokens
+            next_start = idx
             if overlap_tokens >= overlap:
                 break
-        current_sentences = overlap_sentences if overlap_sentences else [sentence]
-        current_tokens = sum(len(tokenize(item)) for item in current_sentences)
-        if current_sentences == [sentence]:
-            i += 1
-    if current_sentences:
-        chunks.append(" ".join(current_sentences))
+        if next_start <= start:
+            next_start = start + 1
+        start = next_start
     return chunks
