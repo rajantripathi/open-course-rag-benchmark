@@ -57,6 +57,8 @@ def infer_numbering(section_slug: str) -> tuple[str | None, str | None]:
 def flatten_toc_node(book_slug: str, node: dict, entries: list[dict]) -> None:
     slug = node.get("slug")
     contents = node.get("contents") or []
+    if slug == "index":
+        return
     if slug and (node.get("toc_target_type") or not contents):
         chapter_number, section_number = infer_numbering(slug)
         entries.append(
@@ -126,12 +128,18 @@ def scrape_book(book_slug: str, output_dir: Path) -> None:
     toc = parse_toc_links(toc_html, book_slug)
     if not toc:
         raise RuntimeError(f"no TOC links found for {book_slug}")
+    written_entries: list[dict] = []
     for entry in toc:
         html = fetch(session, entry["url"])
-        content = extract_main_content(html)
+        try:
+            content = extract_main_content(html)
+        except ValueError as exc:
+            print(f"Skipping {entry['section_slug']}: {exc}")
+            continue
         (output_dir / f"{entry['section_slug']}.md").write_text(content, encoding="utf-8")
-    (output_dir / "toc.json").write_text(json.dumps(toc, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Scraped {len(toc)} sections into {output_dir}")
+        written_entries.append(entry)
+    (output_dir / "toc.json").write_text(json.dumps(written_entries, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"Scraped {len(written_entries)} sections into {output_dir}")
 
 
 def build_parser() -> argparse.ArgumentParser:
