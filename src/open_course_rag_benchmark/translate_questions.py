@@ -40,3 +40,6 @@ def main(argv: list[str] | None = None) -> None:
     write_jsonl(args.output, output)
     print(f"Wrote translations to {args.output}")
 
+
+if __name__ == "__main__":
+    main()

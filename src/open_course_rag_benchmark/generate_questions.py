@@ -107,3 +107,7 @@ def main(argv: list[str] | None = None) -> None:
             counts[chunk["course_id"]] = counts.get(chunk["course_id"], 0) + 1
     write_jsonl(args.output, rows)
     print(f"Wrote {len(rows)} candidates to {args.output}")
+
+
+if __name__ == "__main__":
+    main()
