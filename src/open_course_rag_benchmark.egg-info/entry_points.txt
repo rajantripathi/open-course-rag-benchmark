@@ -1,0 +1,2 @@
+[console_scripts]
+ocrb = open_course_rag_benchmark.cli:main

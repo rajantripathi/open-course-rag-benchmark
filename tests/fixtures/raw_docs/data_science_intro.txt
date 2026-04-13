@@ -1,0 +1,2 @@
+Overfitting happens when a predictive model fits the training data too closely and fails to generalize well to new examples. Regularization and validation can reduce overfitting.
+

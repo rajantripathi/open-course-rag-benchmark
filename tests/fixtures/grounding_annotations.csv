@@ -1,0 +1,6 @@
+qid,label,duplicate_group
+Q001,correct_grounded,g1
+Q001,correct_grounded,g1
+Q002,unsupported,g2
+Q002,unsupported,g2
+

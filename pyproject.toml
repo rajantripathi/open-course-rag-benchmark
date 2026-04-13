@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "open-course-rag-benchmark"
+version = "0.1.0"
+description = "Open multilingual benchmark for retrieval-grounded educational assistants"
+requires-python = ">=3.10"
+dependencies = [
+  "matplotlib>=3.8",
+  "numpy>=1.26",
+  "PyYAML>=6.0",
+  "rank-bm25>=0.2.2",
+]
+
+[project.optional-dependencies]
+models = [
+  "sentence-transformers>=3.0.0",
+  "transformers>=4.44.0",
+]
+dev = [
+  "pytest>=8.2",
+]
+
+[project.scripts]
+ocrb = "open_course_rag_benchmark.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

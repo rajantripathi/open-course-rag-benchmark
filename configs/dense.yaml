@@ -1,0 +1,6 @@
+name: dense
+model_name: intfloat/multilingual-e5-large
+query_prefix: "query: "
+document_prefix: "passage: "
+top_k: 5
+

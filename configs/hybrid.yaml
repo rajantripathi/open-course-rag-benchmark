@@ -1,0 +1,6 @@
+name: hybrid
+bm25_results: results/tables/bm25.jsonl
+dense_results: results/tables/dense.jsonl
+rrf_k: 60
+top_k: 5
+
