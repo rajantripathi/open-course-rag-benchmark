@@ -1,4 +1,4 @@
 doc_id,course_id,title,source_type,license,source_url,download_date,file_path
-ds_ch01,openstax_data_science,Introduction,textbook,CC BY 4.0,https://openstax.org/,2026-04-13,raw/openstax/ch01.md
-ethics_lecture_01,mit_ethics,Ethics of Technology Lecture 1,lecture_notes,CC BY-NC-SA,https://ocw.mit.edu/,2026-04-13,raw/mit/lecture01.html
+ds_ch01_s01,openstax_data_science,1.1 What Is Data Science?,textbook_section,CC BY-NC-SA 4.0,https://openstax.org/books/principles-data-science/pages/1-1-what-is-data-science,2026-04-14,raw/openstax_data_science/1-1-what-is-data-science.html
+phil_ch01_s01,openstax_philosophy,1.1 What Is Philosophy?,textbook_section,CC BY 4.0,https://openstax.org/books/introduction-philosophy/pages/1-1-what-is-philosophy,2026-04-14,raw/openstax_philosophy/1-1-what-is-philosophy.html
 

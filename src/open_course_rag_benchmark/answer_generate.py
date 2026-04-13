@@ -8,58 +8,51 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from .io_utils import read_jsonl, write_jsonl
 
 
+ABSTAIN = "Insufficient evidence to answer this question."
+
+
 def evidence_prompt(question: str, evidence_chunks: list[dict]) -> str:
-    evidence_text = "\n\n".join(
-        f"[{chunk['chunk_id']}] {chunk['text']}" for chunk in evidence_chunks
-    )
+    evidence_text = "\n".join(f"[{chunk['chunk_id']}]: {chunk['text']}" for chunk in evidence_chunks)
     return (
-        "You are answering educational questions using retrieved evidence only.\n"
-        "If the evidence is insufficient, answer exactly: insufficient evidence.\n"
-        "Cite supporting chunk ids in the answer.\n\n"
-        f"Question: {question}\n\n"
+        "You are an AI course assistant. Answer the student's question using ONLY\n"
+        "the evidence provided below. Cite the chunk IDs you use in square brackets\n"
+        "(e.g., [ds_ch03_007]).\n\n"
+        "If the evidence does not contain enough information to answer the question\n"
+        f"confidently, respond with: \"{ABSTAIN}\"\n\n"
         f"Evidence:\n{evidence_text}\n\n"
-        "Answer:"
+        f"Question: {question}\nAnswer:"
     )
 
 
-def run_generation(
-    chunks: list[dict],
-    retrieval_results: list[dict],
-    questions: list[dict],
-    model_name: str,
-    max_new_tokens: int,
-) -> list[dict]:
+def run_generation(chunks: list[dict], retrieval_results: list[dict], questions: list[dict], model_name: str, max_new_tokens: int) -> list[dict]:
     chunk_by_id = {chunk["chunk_id"]: chunk for chunk in chunks}
-    question_by_id = {question["qid"]: question for question in questions}
+    question_by_qid = {question["qid"]: question for question in questions}
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
-    generator = pipeline(
-        "text-generation",
-        model=model,
-        tokenizer=tokenizer,
-    )
+    generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
     outputs: list[dict] = []
     for row in retrieval_results:
-        question = question_by_id[row["qid"]]
-        chunk_ids = [item["chunk_id"] for item in row["ranked_results"]]
-        evidence = [chunk_by_id[chunk_id] for chunk_id in chunk_ids if chunk_id in chunk_by_id]
+        question = question_by_qid[row["qid"]]
+        retrieved_ids = [item["chunk_id"] for item in row["ranked_chunks"][:5]]
+        evidence = [chunk_by_id[chunk_id] for chunk_id in retrieved_ids if chunk_id in chunk_by_id]
         prompt = evidence_prompt(question["question_text"], evidence)
         generated = generator(prompt, max_new_tokens=max_new_tokens, do_sample=False)[0]["generated_text"]
-        answer = generated[len(prompt) :].strip() if generated.startswith(prompt) else generated.strip()
+        answer = generated[len(prompt):].strip() if generated.startswith(prompt) else generated.strip()
         outputs.append(
             {
                 "qid": row["qid"],
                 "system": row["system"],
-                "retrieved_chunk_ids": chunk_ids,
+                "language": row["language"],
+                "retrieved_chunk_ids": retrieved_ids,
                 "answer": answer,
-                "abstained": answer.lower() == "insufficient evidence.",
+                "abstained": answer == ABSTAIN,
             }
         )
     return outputs
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Generate answers from retrieved evidence.")
+    parser = argparse.ArgumentParser(description="Generate grounded answers from retrieved evidence.")
     parser.add_argument("--chunks", type=Path, required=True)
     parser.add_argument("--retrieval", type=Path, required=True)
     parser.add_argument("--questions", type=Path, required=True)
@@ -72,15 +65,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    chunks = read_jsonl(args.chunks)
-    retrieval_results = read_jsonl(args.retrieval)
-    questions = read_jsonl(args.questions)
     outputs = run_generation(
-        chunks=chunks,
-        retrieval_results=retrieval_results,
-        questions=questions,
-        model_name=args.model_name,
-        max_new_tokens=args.max_new_tokens,
+        read_jsonl(args.chunks),
+        read_jsonl(args.retrieval),
+        read_jsonl(args.questions),
+        args.model_name,
+        args.max_new_tokens,
     )
     write_jsonl(args.output, outputs)
     print(f"Wrote generated answers to {args.output}")

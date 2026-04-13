@@ -1,34 +1,45 @@
 # Open Course RAG Benchmark
 
-Fully open benchmark and pipeline for multilingual retrieval-grounded educational question answering in higher education.
+Open multilingual benchmark and pipeline for retrieval-grounded educational question answering in higher education.
 
 ## Scope
 
 This repository targets a paper and benchmark built from:
 
-- `OpenStax Principles of Data Science`
-- `MIT OpenCourseWare` ethics course materials
+- `OpenStax Principles of Data Science` (`CC BY-NC-SA 4.0`)
+- `OpenStax Introduction to Philosophy` (`CC BY 4.0`)
 
 The benchmark is designed for:
 
 - English and Uzbek questions
 - BM25, dense, and hybrid retrieval
 - evidence-grounded answer generation
-- fully open data and model dependencies
+- fully open source data, code, and models
+
+The benchmark release uses `CC BY-NC-SA 4.0`, the more restrictive of the two
+source licenses.
+
+## Data Statement
+
+Both OpenStax books contain the clause: "This book may not be used in the
+training of large language models." This project uses the books as a static
+retrieval corpus for evaluation only. The texts are not used to train or
+fine-tune any model weights.
 
 ## Repository Layout
 
 ```text
-configs/                 Retrieval and generation configuration
+configs/                 Retrieval, generation, and chunking configuration
 data/
-  raw/                   Download scripts and provenance notes
-  processed/             Documents and chunk outputs
-  benchmark/             Questions, labels, and annotation templates
+  raw/                   Provenance notes and download manifests
+  processed/             Lightweight processed outputs
+  benchmark/             Questions, labels, and manual review artifacts
 docs/                    Benchmark and annotation documentation
 paper/                   Manuscript support files
 results/
-  figures/               Paper-ready plots
+  figures/               Paper-ready figures
   tables/                Paper-ready tables
+scripts/                 Local review/export helpers
 scripts/isambard/        Deploy and remote execution helpers
 slurm/                   Isambard batch scripts
 src/open_course_rag_benchmark/
@@ -41,13 +52,13 @@ tests/
 
 ```json
 {
-  "doc_id": "ds_ch03",
+  "doc_id": "ds_ch03_s02",
   "course_id": "openstax_data_science",
-  "title": "Introduction to Statistical Analysis",
-  "source_type": "textbook",
-  "license": "CC BY 4.0",
-  "source_url": "https://openstax.org/...",
-  "download_date": "2026-04-13",
+  "title": "3.2 Statistical Measures",
+  "source_type": "textbook_section",
+  "license": "CC BY-NC-SA 4.0",
+  "source_url": "https://openstax.org/books/principles-data-science/pages/3-2-statistical-measures",
+  "download_date": "2026-04-14",
   "text": "..."
 }
 ```
@@ -56,8 +67,8 @@ tests/
 
 ```json
 {
-  "chunk_id": "ds_ch03_007",
-  "doc_id": "ds_ch03",
+  "chunk_id": "ds_ch03_s02_007",
+  "doc_id": "ds_ch03_s02",
   "course_id": "openstax_data_science",
   "section": "3.2 Statistical Measures",
   "chunk_index": 7,
@@ -70,10 +81,10 @@ tests/
 ```json
 {
   "qid": "Q042",
-  "course_id": "mit_ethics",
+  "course_id": "openstax_philosophy",
   "language": "uz",
   "question_type": "conceptual",
-  "question_text": "Algoritmik tarafkashlik nima?",
+  "question_text": "Epistemologiya nimani o'rganadi?",
   "reference_answer": "..."
 }
 ```
@@ -83,8 +94,8 @@ tests/
 ```json
 {
   "qid": "Q042",
-  "gold_doc_ids": ["ethics_ai_bias_notes"],
-  "gold_chunk_ids": ["ethics_ai_bias_004"]
+  "gold_doc_ids": ["phil_ch02_s04"],
+  "gold_chunk_ids": ["phil_ch02_s04_004"]
 }
 ```
 
@@ -94,7 +105,8 @@ tests/
 {
   "qid": "Q042",
   "system": "hybrid",
-  "retrieved_chunk_ids": ["ethics_ai_bias_004", "ethics_ai_bias_006"],
+  "language": "uz",
+  "retrieved_chunk_ids": ["phil_ch02_s04_004", "phil_ch02_s04_006"],
   "answer": "...",
   "abstained": false
 }
@@ -106,25 +118,16 @@ tests/
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e .
+python -m pip install -e '.[dev]'
 pytest -q
-```
-
-Example local pipeline on the included fixtures:
-
-```bash
-ocrb ingest --input-dir tests/fixtures/raw_docs --output data/processed/documents.jsonl
-ocrb chunk --documents data/processed/documents.jsonl --output data/processed/chunks.jsonl
-ocrb bm25 --chunks data/processed/chunks.jsonl --questions tests/fixtures/questions.jsonl --output results/tables/bm25.jsonl
-ocrb eval-retrieval --retrieval results/tables/bm25.jsonl --gold tests/fixtures/gold_labels.jsonl --questions tests/fixtures/questions.jsonl --output results/tables/bm25_metrics.json
 ```
 
 ## Isambard Workflow
 
-Raw course materials and heavy outputs stay on scratch:
+Scratch root:
 
 ```text
-$SCRATCH/open-course-rag-benchmark/
+/scratch/u6ef/rajantripathi.u6ef/open-course-rag-benchmark
 ```
 
 Typical flow:
@@ -132,13 +135,15 @@ Typical flow:
 ```bash
 bash scripts/isambard/deploy.sh
 sbatch slurm/00_setup.sh
+sbatch slurm/00_scrape.sh
 sbatch slurm/01_ingest.sh
 sbatch slurm/02_chunk.sh
 ```
 
 ## Notes
 
-- Commit scripts and benchmark artifacts, not large raw course dumps.
-- Record provenance for every source document.
-- Gold labels must be manually verified.
+- Commit scripts, metadata, benchmark artifacts, and final tables/figures.
+- Do not commit large raw textbook dumps or vector indexes.
+- Gold labels and grounding labels must be manually verified.
+- Primary journal target: `Education and Information Technologies`.
 

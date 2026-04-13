@@ -1,20 +1,22 @@
 # Raw Data Policy
 
-The repository does not track large raw source files. Instead it tracks:
+This repository tracks provenance notes, manifests, and helper scripts only.
 
-- source URLs
-- license notes
-- download scripts
-- lightweight manifests
-
-Store raw downloads on Isambard under:
+Raw textbook material should be staged on Isambard under:
 
 ```text
-$SCRATCH/open-course-rag-benchmark/raw
+/scratch/u6ef/rajantripathi.u6ef/open-course-rag-benchmark/raw
+```
+
+Expected layout:
+
+```text
+raw/openstax_data_science/
+raw/openstax_philosophy/
 ```
 
 Primary sources:
 
-- OpenStax `Principles of Data Science` under `CC BY 4.0`
-- MIT OpenCourseWare ethics course materials under `CC BY-NC-SA`
+- OpenStax `Principles of Data Science` (`CC BY-NC-SA 4.0`)
+- OpenStax `Introduction to Philosophy` (`CC BY 4.0`)
 

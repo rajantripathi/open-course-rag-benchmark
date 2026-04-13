@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Iterable
 
+import yaml
+
 
 def ensure_parent(path: str | Path) -> Path:
     output_path = Path(path)
@@ -37,4 +39,9 @@ def write_csv(path: str | Path, rows: list[dict]) -> None:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
         writer.writeheader()
         writer.writerows(rows)
+
+
+def read_yaml(path: str | Path) -> dict:
+    with Path(path).open("r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
 

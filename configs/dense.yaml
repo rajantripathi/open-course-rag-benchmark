@@ -1,6 +1,7 @@
-name: dense
-model_name: intfloat/multilingual-e5-large
+system: dense
+model: intfloat/multilingual-e5-large
+top_k: 10
 query_prefix: "query: "
-document_prefix: "passage: "
-top_k: 5
-
+passage_prefix: "passage: "
+batch_size: 64
+seed: 42

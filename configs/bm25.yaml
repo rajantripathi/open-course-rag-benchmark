@@ -1,3 +1,5 @@
-name: bm25
-top_k: 5
-
+system: bm25
+k1: 1.5
+b: 0.75
+top_k: 10
+seed: 42

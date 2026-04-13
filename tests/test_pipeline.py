@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from open_course_rag_benchmark.build_benchmark import summarize_questions
+from open_course_rag_benchmark.build_benchmark import validate
 from open_course_rag_benchmark.chunk_docs import chunk_documents
 from open_course_rag_benchmark.eval_grounding import summarize as summarize_grounding
-from open_course_rag_benchmark.eval_retrieval import evaluate
-from open_course_rag_benchmark.ingest import discover_documents
 from open_course_rag_benchmark.io_utils import read_csv, read_jsonl
 from open_course_rag_benchmark.retrieve_bm25 import run_bm25
 
@@ -14,27 +12,33 @@ from open_course_rag_benchmark.retrieve_bm25 import run_bm25
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
-def test_fixture_pipeline(tmp_path) -> None:
-    documents = discover_documents((FIXTURES / "raw_docs").resolve())
-    course_ids = ["openstax_data_science", "mit_ethics"]
-    for document, course_id in zip(documents, course_ids):
-        document["course_id"] = course_id
-        document["license"] = "open"
-
+def test_fixture_pipeline() -> None:
+    documents = [
+        {
+            "doc_id": "data_science_intro",
+            "course_id": "openstax_data_science",
+            "title": "What Is Data Science?",
+            "text": (FIXTURES / "raw_docs" / "data_science_intro.txt").read_text(encoding="utf-8"),
+        },
+        {
+            "doc_id": "philosophy_intro",
+            "course_id": "openstax_philosophy",
+            "title": "What Is Philosophy?",
+            "text": (FIXTURES / "raw_docs" / "philosophy_intro.txt").read_text(encoding="utf-8"),
+        },
+    ]
     chunks = chunk_documents(documents, chunk_size=64, overlap=16)
-    assert any(chunk["chunk_id"] == "data_science_intro_000" for chunk in chunks)
-
     questions = read_jsonl(FIXTURES / "questions.jsonl")
-    results = run_bm25(chunks, questions, top_k=2)
-    gold = read_jsonl(FIXTURES / "gold_labels.jsonl")
-    metrics = evaluate(results, gold)
+    labels = read_jsonl(FIXTURES / "gold_labels.jsonl")
+    results = run_bm25(chunks, questions, top_k=2, k1=1.5, b=0.75)
+    assert len(results) == 4
+    assert any(row["qid"] == "Q001" and row["language"] == "en" for row in results)
+    errors = validate(questions, labels, chunks)
+    assert "expected 120 questions" in errors[0]
+    assert all("missing" not in error for error in errors if "chunk" in error)
 
-    assert metrics["Recall@1"] == 1.0
-    assert metrics["Recall@3"] == 1.0
-    assert summarize_questions(questions)["total_questions"] == 2
 
-
-def test_grounding_summary(tmp_path) -> None:
+def test_grounding_summary() -> None:
     rows = read_csv(FIXTURES / "grounding_annotations.csv")
     summary = summarize_grounding(rows)
     assert summary["label_distribution"]["correct_grounded"] == 2

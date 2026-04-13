@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-$PWD}"
 PROJECT_ROOT="${PROJECT_ROOT:-${SCRATCH:-$HOME}/open-course-rag-benchmark}"
-VENV_DIR="${VENV_DIR:-$HOME/.venvs/open-course-rag-benchmark}"
+VENV_DIR="${VENV_DIR:-$REPO_DIR/venv}"
 
 module purge || true
 module load cray-python/3.11.7 2>/dev/null || true
@@ -15,10 +15,15 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install -r "$REPO_DIR/requirements.txt"
 
 mkdir -p \
-  "$PROJECT_ROOT/raw" \
+  "$PROJECT_ROOT/raw/openstax_data_science" \
+  "$PROJECT_ROOT/raw/openstax_philosophy" \
   "$PROJECT_ROOT/processed" \
   "$PROJECT_ROOT/indexes" \
-  "$PROJECT_ROOT/results" \
-  "$PROJECT_ROOT/cache"
+  "$PROJECT_ROOT/results/retrieval" \
+  "$PROJECT_ROOT/results/answers" \
+  "$PROJECT_ROOT/results/tables" \
+  "$PROJECT_ROOT/results/figures" \
+  "$PROJECT_ROOT/cache" \
+  "$REPO_DIR/logs"
 
 echo "Environment ready at $VENV_DIR"

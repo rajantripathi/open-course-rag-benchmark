@@ -1,0 +1,5 @@
+chunk_size: 512
+overlap: 64
+method: sentence_aware
+seed: 42
+

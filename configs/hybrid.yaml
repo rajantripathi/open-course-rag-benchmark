@@ -1,6 +1,8 @@
-name: hybrid
-bm25_results: results/tables/bm25.jsonl
-dense_results: results/tables/dense.jsonl
-rrf_k: 60
-top_k: 5
-
+system: hybrid
+method: rrf
+k: 60
+top_k: 10
+sources:
+  - bm25_results.jsonl
+  - dense_results.jsonl
+seed: 42

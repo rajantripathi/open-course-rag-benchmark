@@ -12,9 +12,12 @@ rsync -avz \
   --exclude='.pytest_cache' \
   --exclude='__pycache__' \
   --exclude='*.pyc' \
+  --exclude='venv' \
   --exclude='data/raw/downloads' \
   --exclude='data/processed/*.jsonl' \
   --exclude='results/**/*.jsonl' \
   --exclude='results/**/*.json' \
   --exclude='results/**/*.csv' \
+  --exclude='results/**/*.png' \
+  --exclude='results/**/*.pdf' \
   "$LOCAL_ROOT/" "$REMOTE_HOST:$REMOTE_ROOT/"

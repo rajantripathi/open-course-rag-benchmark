@@ -9,11 +9,11 @@
 
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-$PWD}"
-cd "$REPO_DIR"
+SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/u6ef/rajantripathi.u6ef/open-course-rag-benchmark}"
+cd "$SCRATCH_ROOT/repo"
 source scripts/isambard/slurm_env.sh
+
 ocrb ingest \
-  --manifest data/raw/source_manifest_template.csv \
-  --base-dir "$PROJECT_ROOT" \
-  --output data/processed/documents.jsonl
+  --raw-root "$SCRATCH_ROOT/raw" \
+  --output "$SCRATCH_ROOT/processed/documents.jsonl"
 
