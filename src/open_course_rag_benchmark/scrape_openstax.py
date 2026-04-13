@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import time
 from pathlib import Path
 from urllib.parse import urljoin
@@ -21,27 +22,80 @@ def fetch(session: requests.Session, url: str) -> str:
     return response.text
 
 
+def strip_html(text: str) -> str:
+    return " ".join(BeautifulSoup(text, "html.parser").stripped_strings)
+
+
+def extract_preloaded_state(html: str) -> dict:
+    marker = "__PRELOADED_STATE__ = "
+    start = html.find(marker)
+    if start == -1:
+        raise ValueError("could not find __PRELOADED_STATE__ in OpenStax page")
+    start += len(marker)
+    depth = 0
+    end = None
+    for index, char in enumerate(html[start:], start=start):
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                end = index + 1
+                break
+    if end is None:
+        raise ValueError("could not parse __PRELOADED_STATE__ JSON block")
+    return json.loads(html[start:end])
+
+
+def infer_numbering(section_slug: str) -> tuple[str | None, str | None]:
+    match = re.match(r"(?P<chapter>\d+)(?:-(?P<section>\d+))?", section_slug)
+    if not match:
+        return None, None
+    return match.group("chapter"), match.group("section")
+
+
+def flatten_toc_node(book_slug: str, node: dict, entries: list[dict]) -> None:
+    slug = node.get("slug")
+    contents = node.get("contents") or []
+    if slug and (node.get("toc_target_type") or not contents):
+        chapter_number, section_number = infer_numbering(slug)
+        entries.append(
+            {
+                "section_slug": slug,
+                "title": strip_html(node.get("title", slug)) or slug,
+                "chapter_number": chapter_number,
+                "section_number": section_number,
+                "url": f"{BASE_URL}/books/{book_slug}/pages/{slug}",
+            }
+        )
+    for child in contents:
+        flatten_toc_node(book_slug, child, entries)
+
+
 def parse_toc_links(html: str, slug: str) -> list[dict]:
-    soup = BeautifulSoup(html, "html.parser")
+    state = extract_preloaded_state(html)
+    tree = state["content"]["book"]["tree"]
+    entries: list[dict] = []
+    flatten_toc_node(slug, tree, entries)
     seen: set[str] = set()
-    links: list[dict] = []
-    for anchor in soup.find_all("a", href=True):
-        href = anchor["href"]
-        if f"/books/{slug}/pages/" not in href:
+    deduped: list[dict] = []
+    for entry in entries:
+        section_slug = entry["section_slug"]
+        if section_slug in seen:
             continue
-        section_url = urljoin(BASE_URL, href)
-        if section_url in seen:
-            continue
-        seen.add(section_url)
-        section_slug = section_url.rstrip("/").split("/pages/")[-1]
-        title = " ".join(anchor.stripped_strings) or section_slug
-        links.append({"section_slug": section_slug, "title": title, "url": section_url})
-    return links
+        seen.add(section_slug)
+        deduped.append(entry)
+    return deduped
 
 
 def extract_main_content(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
-    main = soup.select_one(".os-text") or soup.select_one("main") or soup.select_one("article")
+    main = (
+        soup.select_one('div[data-book-content="true"]')
+        or soup.select_one('div[data-type="page"]')
+        or soup.select_one("main")
+        or soup.select_one("article")
+    )
     if main is None:
         raise ValueError("could not find main content block")
     for tag in main.select("script,style,nav,footer,img,figure,aside"):
@@ -95,4 +149,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-
