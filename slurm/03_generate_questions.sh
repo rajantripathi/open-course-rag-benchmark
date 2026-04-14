@@ -5,8 +5,9 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --time=02:00:00
+#SBATCH --time=04:00:00
 #SBATCH --output=logs/%j.out
+#SBATCH --error=logs/%j.err
 
 set -euo pipefail
 SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/u6ef/rajantripathi.u6ef/open-course-rag-benchmark}"
@@ -16,13 +17,23 @@ export HF_HOME="$SCRATCH_ROOT/cache/huggingface"
 export TRANSFORMERS_CACHE="$HF_HOME"
 mkdir -p "$HF_HOME"
 mkdir -p "$SCRATCH_ROOT/benchmark_candidates"
+mkdir -p "$SCRATCH_ROOT/benchmark_candidates/debug"
 
 python -u -m open_course_rag_benchmark.generate_questions \
   --chunks "$SCRATCH_ROOT/processed/chunks.jsonl" \
   --model-name "Qwen/Qwen2.5-3B-Instruct" \
   --output "$SCRATCH_ROOT/benchmark_candidates/candidates.jsonl" \
   --append \
-  --stride 2 \
-  --per-course-target 80 \
-  --max-chunks 180 \
-  --max-new-tokens 220
+  --debug-dir "$SCRATCH_ROOT/benchmark_candidates/debug" \
+  --seed 42 \
+  --per-course-target 200 \
+  --max-new-tokens 180
+
+echo ""
+echo "=== Job complete ==="
+echo "Candidates file:"
+wc -l "$SCRATCH_ROOT/benchmark_candidates/candidates.jsonl" 2>/dev/null || echo "0"
+echo "Debug files:"
+ls "$SCRATCH_ROOT/benchmark_candidates/debug/" 2>/dev/null | wc -l || echo "0"
+echo "Parse failures:"
+cat "$SCRATCH_ROOT/benchmark_candidates/debug/parse_failures.log" 2>/dev/null | wc -l || echo "0"
