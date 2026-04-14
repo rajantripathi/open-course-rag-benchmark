@@ -8,7 +8,7 @@ from pathlib import Path
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
-from .io_utils import read_jsonl, write_jsonl
+from .io_utils import append_jsonl, read_jsonl, write_jsonl
 
 
 PROMPT = """You are creating a question benchmark for evaluating AI course assistants.
@@ -54,9 +54,19 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--model-name", default="Qwen/Qwen2.5-3B-Instruct")
     parser.add_argument("--stride", type=int, default=1)
     parser.add_argument("--per-course-target", type=int, default=200)
+    parser.add_argument("--course-id")
+    parser.add_argument("--start-index", type=int, default=0)
+    parser.add_argument("--max-chunks", type=int)
+    parser.add_argument("--max-new-tokens", type=int, default=220)
+    parser.add_argument("--append", action="store_true")
     args = parser.parse_args(argv)
 
     chunks = read_jsonl(args.chunks)
+    if args.course_id:
+        chunks = [chunk for chunk in chunks if chunk["course_id"] == args.course_id]
+    chunks = chunks[args.start_index :]
+    if args.max_chunks is not None:
+        chunks = chunks[: args.max_chunks]
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -72,6 +82,11 @@ def main(argv: list[str] | None = None) -> None:
         device=0 if torch.cuda.is_available() else -1,
     )
     counts: dict[str, int] = {}
+    if args.append and args.output.exists():
+        for row in read_jsonl(args.output):
+            course_id = row.get("course_id")
+            if course_id:
+                counts[course_id] = counts.get(course_id, 0) + 1
     rows: list[dict] = []
     for chunk in chunks[:: args.stride]:
         if counts.get(chunk["course_id"], 0) >= args.per_course_target:
@@ -79,7 +94,7 @@ def main(argv: list[str] | None = None) -> None:
         prompt = PROMPT.format(course_name=course_name(chunk["course_id"]), chunk_text=chunk["text"])
         text = generator(
             prompt,
-            max_new_tokens=400,
+            max_new_tokens=args.max_new_tokens,
             do_sample=False,
             temperature=None,
             pad_token_id=tokenizer.eos_token_id,
@@ -87,6 +102,7 @@ def main(argv: list[str] | None = None) -> None:
         items = extract_json_array(text)
         if items is None:
             continue
+        fresh_rows: list[dict] = []
         for idx, item in enumerate(items):
             if counts.get(chunk["course_id"], 0) >= args.per_course_target:
                 break
@@ -94,7 +110,7 @@ def main(argv: list[str] | None = None) -> None:
                 continue
             if not {"question_type", "question_text", "reference_answer"} <= set(item):
                 continue
-            rows.append(
+            row = (
                 {
                     "candidate_id": f"{chunk['chunk_id']}_{idx}",
                     "chunk_id": chunk["chunk_id"],
@@ -104,8 +120,21 @@ def main(argv: list[str] | None = None) -> None:
                     "reference_answer": item["reference_answer"],
                 }
             )
+            fresh_rows.append(row)
+            rows.append(row)
             counts[chunk["course_id"]] = counts.get(chunk["course_id"], 0) + 1
-    write_jsonl(args.output, rows)
+        if args.append and fresh_rows:
+            append_jsonl(args.output, fresh_rows)
+            print(
+                "chunk={} wrote={} totals={}".format(
+                    chunk["chunk_id"],
+                    len(fresh_rows),
+                    ",".join(f"{key}:{counts[key]}" for key in sorted(counts)),
+                ),
+                flush=True,
+            )
+    if not args.append:
+        write_jsonl(args.output, rows)
     print(f"Wrote {len(rows)} candidates to {args.output}")
 
 

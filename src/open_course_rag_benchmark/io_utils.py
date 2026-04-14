@@ -26,6 +26,13 @@ def write_jsonl(path: str | Path, rows: Iterable[dict]) -> None:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def append_jsonl(path: str | Path, rows: Iterable[dict]) -> None:
+    output_path = ensure_parent(path)
+    with output_path.open("a", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
 def read_csv(path: str | Path) -> list[dict]:
     with Path(path).open("r", encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
@@ -44,4 +51,3 @@ def write_csv(path: str | Path, rows: list[dict]) -> None:
 def read_yaml(path: str | Path) -> dict:
     with Path(path).open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle) or {}
-

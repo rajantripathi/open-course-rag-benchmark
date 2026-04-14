@@ -20,4 +20,9 @@ mkdir -p "$SCRATCH_ROOT/benchmark_candidates"
 python -u -m open_course_rag_benchmark.generate_questions \
   --chunks "$SCRATCH_ROOT/processed/chunks.jsonl" \
   --model-name "Qwen/Qwen2.5-3B-Instruct" \
-  --output "$SCRATCH_ROOT/benchmark_candidates/candidates.jsonl"
+  --output "$SCRATCH_ROOT/benchmark_candidates/candidates.jsonl" \
+  --append \
+  --stride 2 \
+  --per-course-target 80 \
+  --max-chunks 180 \
+  --max-new-tokens 220
