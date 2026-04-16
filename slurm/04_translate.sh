@@ -12,7 +12,7 @@
 set -euo pipefail
 SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/u6ef/rajantripathi.u6ef/open-course-rag-benchmark}"
 START_INDEX="${START_INDEX:-0}"
-MAX_RECORDS="${MAX_RECORDS:-25}"
+MAX_RECORDS="${MAX_RECORDS:-5}"
 cd "$SCRATCH_ROOT/repo"
 source scripts/isambard/slurm_env.sh
 export HF_HOME="$SCRATCH_ROOT/cache/huggingface"

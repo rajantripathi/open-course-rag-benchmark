@@ -14,7 +14,7 @@ def translate_text(generator, text: str) -> str:
         "with a brief Uzbek explanation in parentheses.\n\n"
         f"English: {text}\nUzbek:"
     )
-    generated = generator(prompt, max_new_tokens=160, do_sample=False)[0]["generated_text"]
+    generated = generator(prompt, max_new_tokens=80, do_sample=False)[0]["generated_text"]
     return generated.strip()
 
 
