@@ -22,11 +22,11 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Translate curated questions and answers to Uzbek.")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--model-name", default="Qwen/Qwen2.5-3B-Instruct")
+    parser.add_argument("--model-name", default="Qwen/Qwen2.5-1.5B-Instruct")
     parser.add_argument("--start-index", type=int, default=0)
     parser.add_argument("--max-records", type=int)
     parser.add_argument("--append", action="store_true")
-    parser.add_argument("--flush-every", type=int, default=10)
+    parser.add_argument("--flush-every", type=int, default=1)
     args = parser.parse_args(argv)
 
     import torch
@@ -39,7 +39,10 @@ def main(argv: list[str] | None = None) -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForCausalLM.from_pretrained(args.model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model_name,
+        low_cpu_mem_usage=True,
+    )
     generator = pipeline(
         "text-generation",
         model=model,

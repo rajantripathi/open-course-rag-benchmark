@@ -12,7 +12,7 @@
 set -euo pipefail
 SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/u6ef/rajantripathi.u6ef/open-course-rag-benchmark}"
 START_INDEX="${START_INDEX:-0}"
-MAX_RECORDS="${MAX_RECORDS:-50}"
+MAX_RECORDS="${MAX_RECORDS:-25}"
 cd "$SCRATCH_ROOT/repo"
 source scripts/isambard/slurm_env.sh
 export HF_HOME="$SCRATCH_ROOT/cache/huggingface"
@@ -22,7 +22,7 @@ mkdir -p "$SCRATCH_ROOT/benchmark_candidates"
 
 python -u -m open_course_rag_benchmark.translate_questions \
   --input "$SCRATCH_ROOT/benchmark_candidates/candidates.jsonl" \
-  --model-name "Qwen/Qwen2.5-3B-Instruct" \
+  --model-name "Qwen/Qwen2.5-1.5B-Instruct" \
   --output "$SCRATCH_ROOT/benchmark_candidates/translations.jsonl" \
   --start-index "$START_INDEX" \
   --max-records "$MAX_RECORDS" \
