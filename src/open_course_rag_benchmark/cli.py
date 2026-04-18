@@ -15,6 +15,7 @@ COMMANDS = {
     "dense": "retrieve_dense",
     "hybrid": "retrieve_hybrid",
     "answer": "answer_generate",
+    "auto-ground": "auto_ground",
     "eval-retrieval": "eval_retrieval",
     "eval-grounding": "eval_grounding",
     "plots": "plots",
@@ -31,4 +32,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
