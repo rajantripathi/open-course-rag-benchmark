@@ -34,7 +34,7 @@ def test_fixture_pipeline() -> None:
     assert len(results) == 4
     assert any(row["qid"] == "Q001" and row["language"] == "en" for row in results)
     errors = validate(questions, labels, chunks)
-    assert "expected 120 questions" in errors[0]
+    assert "expected 240 questions" in errors[0]
     assert all("missing" not in error for error in errors if "chunk" in error)
 
 
