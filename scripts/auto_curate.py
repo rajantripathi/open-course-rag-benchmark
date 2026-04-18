@@ -22,6 +22,10 @@ def section_key(row: dict) -> str:
     return row["chunk_id"].rsplit("_", 1)[0]
 
 
+def normalize_text(text: str) -> str:
+    return " ".join(text.strip().lower().split())
+
+
 def question_quality(row: dict) -> tuple[int, int, int]:
     question = row["question_text_en"].strip()
     answer = row["reference_answer_en"].strip()
@@ -95,6 +99,22 @@ def round_robin_sections(rows: list[dict], limit: int) -> list[dict]:
     return selected
 
 
+def dedupe_rows(rows: list[dict]) -> tuple[list[dict], int]:
+    best_by_candidate: dict[str, dict] = {}
+    duplicate_count = 0
+    for row in rows:
+        candidate_id = row["candidate_id"]
+        if candidate_id in best_by_candidate:
+            duplicate_count += 1
+            current = best_by_candidate[candidate_id]
+            if (question_quality(row), row["candidate_id"]) > (question_quality(current), current["candidate_id"]):
+                best_by_candidate[candidate_id] = row
+        else:
+            best_by_candidate[candidate_id] = row
+    deduped = sorted(best_by_candidate.values(), key=lambda row: row["candidate_id"])
+    return deduped, duplicate_count
+
+
 def candidate_copy(row: dict, *, question_type: str | None = None, note: str = "") -> dict:
     updated = dict(row)
     if question_type is not None:
@@ -135,15 +155,31 @@ def select_rows(rows: list[dict]) -> tuple[list[dict], list[dict], list[str]]:
 
     for course_id, targets in TARGETS.items():
         chosen_ids: set[str] = set()
+        chosen_prompts: set[tuple[str, str]] = set()
         course_rows: list[dict] = []
         for question_type, target in targets.items():
-            pool = [row for row in by_course_type[course_id][question_type] if row["candidate_id"] not in chosen_ids]
+            pool = []
+            seen_pool_prompts: set[tuple[str, str]] = set()
+            for row in by_course_type[course_id][question_type]:
+                prompt_keys = {
+                    ("en", normalize_text(row["question_text_en"])),
+                    ("uz", normalize_text(row["question_text_uz"])),
+                }
+                if row["candidate_id"] in chosen_ids or prompt_keys & chosen_prompts or prompt_keys & seen_pool_prompts:
+                    continue
+                pool.append(row)
+                seen_pool_prompts |= prompt_keys
             picks = round_robin_sections(pool, target)
             if len(picks) < target and course_id == "openstax_philosophy" and question_type == "procedural":
                 fallback_pool = [
                     row
                     for row in by_course_type[course_id]["comparative"]
-                    if row["candidate_id"] not in chosen_ids and row["candidate_id"] not in {pick["candidate_id"] for pick in picks}
+                    if row["candidate_id"] not in chosen_ids
+                    and row["candidate_id"] not in {pick["candidate_id"] for pick in picks}
+                    and {
+                        ("en", normalize_text(row["question_text_en"])),
+                        ("uz", normalize_text(row["question_text_uz"])),
+                    }.isdisjoint(chosen_prompts)
                 ]
                 fallback_pool.sort(
                     key=lambda row: (
@@ -170,6 +206,8 @@ def select_rows(rows: list[dict]) -> tuple[list[dict], list[dict], list[str]]:
                     pick = candidate_copy(pick)
                 normalized_picks.append(pick)
                 chosen_ids.add(pick["candidate_id"])
+                chosen_prompts.add(("en", normalize_text(pick["question_text_en"])))
+                chosen_prompts.add(("uz", normalize_text(pick["question_text_uz"])))
             course_rows.extend(normalized_picks)
         selected.extend(course_rows)
         summary_lines.append(
@@ -193,7 +231,8 @@ def main() -> None:
     parser.add_argument("--review-flags", type=Path, required=True, help="Path to review_flags.csv")
     args = parser.parse_args()
 
-    rows = read_csv(args.input)
+    source_rows = read_csv(args.input)
+    rows, duplicate_input_rows = dedupe_rows(source_rows)
     selected, review_flags, summary_lines = select_rows(rows)
 
     selected_by_id = {row["candidate_id"]: row for row in selected}
@@ -218,7 +257,9 @@ def main() -> None:
 
     selected_counter = Counter((row["course_id"], row["question_type"]) for row in selected)
     print("=== Auto-curation summary ===")
-    print(f"input_rows={len(rows)}")
+    print(f"input_rows={len(source_rows)}")
+    print(f"deduped_rows={len(rows)}")
+    print(f"duplicate_input_rows={duplicate_input_rows}")
     print(f"selected_rows={len(selected)}")
     print(f"review_flags={len(review_flags)}")
     for line in summary_lines:
