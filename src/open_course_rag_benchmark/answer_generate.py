@@ -29,19 +29,10 @@ def normalize_existing_keys(rows: list[dict]) -> set[tuple[str, str, str]]:
     return keys
 
 
-def run_generation(
-    chunks: list[dict],
-    retrieval_results: list[dict],
-    questions: list[dict],
-    model_name: str,
-    max_new_tokens: int,
-    existing_keys: set[tuple[str, str, str]] | None = None,
-) -> list[dict]:
+def build_generator(model_name: str):
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
-    chunk_by_id = {chunk["chunk_id"]: chunk for chunk in chunks}
-    question_by_qid = {question["qid"]: question for question in questions}
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -53,26 +44,75 @@ def run_generation(
         return_full_text=False,
         device=0 if torch.cuda.is_available() else -1,
     )
+    if getattr(generator.model, "generation_config", None) is not None:
+        generator.model.generation_config.max_length = None
+    return generator
+
+
+def generate_answer_row(
+    row: dict,
+    *,
+    chunk_by_id: dict[str, dict],
+    question_by_qid: dict[str, dict],
+    generator,
+    max_new_tokens: int,
+) -> dict:
+    question = question_by_qid[row["qid"]]
+    retrieved_ids = [item["chunk_id"] for item in row["ranked_chunks"][:5]]
+    evidence = [chunk_by_id[chunk_id] for chunk_id in retrieved_ids if chunk_id in chunk_by_id]
+    prompt = evidence_prompt(question["question_text"], evidence)
+    generated = generator(prompt, max_new_tokens=max_new_tokens, do_sample=False)[0]["generated_text"]
+    answer = generated.strip()
+    return {
+        "qid": row["qid"],
+        "system": row["system"],
+        "language": row["language"],
+        "retrieved_chunk_ids": retrieved_ids,
+        "answer": answer,
+        "abstained": answer == ABSTAIN,
+    }
+
+
+def run_generation(
+    chunks: list[dict],
+    retrieval_results: list[dict],
+    questions: list[dict],
+    model_name: str,
+    max_new_tokens: int,
+    existing_keys: set[tuple[str, str, str]] | None = None,
+    start_index: int = 0,
+    max_records: int | None = None,
+    output_path: Path | None = None,
+    append: bool = False,
+) -> list[dict]:
+    chunk_by_id = {chunk["chunk_id"]: chunk for chunk in chunks}
+    question_by_qid = {question["qid"]: question for question in questions}
+    generator = build_generator(model_name)
     outputs: list[dict] = []
-    for row in retrieval_results:
+    processed = 0
+    selected_rows = retrieval_results[start_index:]
+    if max_records is not None:
+        selected_rows = selected_rows[:max_records]
+    for offset, row in enumerate(selected_rows, start=start_index):
         row_key = (row["qid"], row["language"], row["system"])
         if existing_keys and row_key in existing_keys:
             continue
-        question = question_by_qid[row["qid"]]
-        retrieved_ids = [item["chunk_id"] for item in row["ranked_chunks"][:5]]
-        evidence = [chunk_by_id[chunk_id] for chunk_id in retrieved_ids if chunk_id in chunk_by_id]
-        prompt = evidence_prompt(question["question_text"], evidence)
-        generated = generator(prompt, max_new_tokens=max_new_tokens, do_sample=False)[0]["generated_text"]
-        answer = generated.strip()
-        outputs.append(
-            {
-                "qid": row["qid"],
-                "system": row["system"],
-                "language": row["language"],
-                "retrieved_chunk_ids": retrieved_ids,
-                "answer": answer,
-                "abstained": answer == ABSTAIN,
-            }
+        output_row = generate_answer_row(
+            row,
+            chunk_by_id=chunk_by_id,
+            question_by_qid=question_by_qid,
+            generator=generator,
+            max_new_tokens=max_new_tokens,
+        )
+        processed += 1
+        if append and output_path is not None:
+            append_jsonl(output_path, [output_row])
+        else:
+            outputs.append(output_row)
+        print(
+            f"generated_batch={processed} generated_total={processed} retrieval_index={offset} "
+            f"qid={row['qid']} language={row['language']}",
+            flush=True,
         )
     return outputs
 
@@ -84,7 +124,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--questions", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model-name", default="Qwen/Qwen2.5-1.5B-Instruct")
-    parser.add_argument("--max-new-tokens", type=int, default=96)
+    parser.add_argument("--max-new-tokens", type=int, default=64)
+    parser.add_argument("--start-index", type=int, default=0)
+    parser.add_argument("--max-records", type=int)
     parser.add_argument("--append", action="store_true")
     return parser
 
@@ -100,9 +142,14 @@ def main(argv: list[str] | None = None) -> None:
         args.model_name,
         args.max_new_tokens,
         normalize_existing_keys(existing_rows),
+        args.start_index,
+        args.max_records,
+        args.output,
+        args.append,
     )
     if args.append:
-        append_jsonl(args.output, outputs)
+        if outputs:
+            append_jsonl(args.output, outputs)
     else:
         write_jsonl(args.output, outputs)
     print(f"Wrote generated answers to {args.output}")
