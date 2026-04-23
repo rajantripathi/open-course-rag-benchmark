@@ -18,6 +18,8 @@ COMMANDS = {
     "auto-ground": "auto_ground",
     "eval-retrieval": "eval_retrieval",
     "eval-grounding": "eval_grounding",
+    "stat-tests": "stat_tests",
+    "error-analysis": "error_analysis",
     "plots": "plots",
 }
 
