@@ -1,0 +1,82 @@
+[
+  {
+    "qid": "Q001",
+    "course_id": "openstax_data_science",
+    "language": "en",
+    "question_type": "conceptual",
+    "question_text": "How does the `MATCH` function work when searching for a specific value within a range of cells?",
+    "reference_answer": "The `MATCH` function locates the relative row number at which a specified value matches within a given range of cells. It takes three arguments: the value to match, the range of search, and the match type. When the match type is set to 0, it seeks for an exact match. If there are multiple matching rows, `MATCH` only returns the very first instance."
+  },
+  {
+    "qid": "Q002",
+    "course_id": "openstax_data_science",
+    "language": "en",
+    "question_type": "comparative",
+    "question_text": "How do the concepts of 'data' and 'data science' differ?",
+    "reference_answer": "Data refers to raw facts and figures, while data science involves the process of transforming these into useful insights and knowledge."
+  },
+  {
+    "qid": "Q003",
+    "course_id": "openstax_data_science",
+    "language": "en",
+    "question_type": "conceptual",
+    "question_text": "How does the use of functions in Python simplify code organization and enhance readability?",
+    "reference_answer": "Functions in Python allow for modular programming where complex tasks can be broken down into smaller, reusable pieces of code. This not only simplifies code organization but also improves readability by encapsulating functionality within named blocks that perform specific operations."
+  },
+  {
+    "qid": "Q004",
+    "course_id": "openstax_data_science",
+    "language": "en",
+    "question_type": "conceptual",
+    "question_text": "What is the primary purpose of data warehousing in modern data management?",
+    "reference_answer": "Data warehousing is designed to store and manage large volumes of data from various sources in a central location, enabling efficient retrieval and analysis for business intelligence and decision-making."
+  },
+  {
+    "qid": "Q005",
+    "course_id": "openstax_data_science",
+    "language": "en",
+    "question_type": "procedural",
+    "question_text": "How can data scientists efficiently process and analyze large datasets using modern data management systems?",
+    "reference_answer": "Modern data management systems, known as data warehousing, store and manage large volumes of data from various sources in a central location, enabling efficient retrieval and analysis for business intelligence and decision-making."
+  },
+  {
+    "qid": "Q001",
+    "course_id": "openstax_data_science",
+    "language": "uz",
+    "question_type": "conceptual",
+    "question_text": "Берилган сизги таасирга қолданып, `MATCH` функциясынан бул жооп алуу мүмкіндиккен? (Есептердеги маалымат)\n\nNote: The original text was",
+    "reference_answer": "Функция `MATCH` иштилган сизги таасирга жактошу мүмкүнсөт. Бул функция 3-коомандан алып кирет. Сизге сунуштуу маалымат бер"
+  },
+  {
+    "qid": "Q002",
+    "course_id": "openstax_data_science",
+    "language": "uz",
+    "question_type": "comparative",
+    "question_text": "Берилган сизги таасирлыштырушу ушунда \"датас\" жана \"дата-сианс\" буларга чыгармалардын ичинен маанилери негизделген? (Буларга",
+    "reference_answer": "Материялар - бул мақсатга жактоо жана сизги таасирлыштуу өзгөчөлүктөрдү көргөндү. Мақсатта жактоо - бул"
+  },
+  {
+    "qid": "Q003",
+    "course_id": "openstax_data_science",
+    "language": "uz",
+    "question_type": "conceptual",
+    "question_text": "Берилган функциялардын Python-деген салоонга киритувушун коди тарапкашырып, бул чагымдог коди түркешуусуну жактошкантууга",
+    "reference_answer": "Функции в Пайтоне позволяют разработке модульной программирования, где сложные задачи можно разделить на более мелкие, повторяемые части кода. Это не только упрощает организацию кода, но и повышает читаемость, поскольку"
+  },
+  {
+    "qid": "Q004",
+    "course_id": "openstax_data_science",
+    "language": "uz",
+    "question_type": "conceptual",
+    "question_text": "Берилган навигациялардан толук машиналигинин биринчи мислининг аталышы? \n\nExplanation:\n- \"Technical term\" is translated as \"навигациялардан толук машиналигиз\"\n- \"No standard Uzbek equivalent\" is translated as \"бериришту сан",
+    "reference_answer": "Маназирлыштуване - бул жаңы түзилган маалыматтардын аркылуу өлчөмдүгүсін жарыяласқанда, ошондоо көптөгөн маалыматтардын аркылу"
+  },
+  {
+    "qid": "Q005",
+    "course_id": "openstax_data_science",
+    "language": "uz",
+    "question_type": "procedural",
+    "question_text": "Берилган датасетлери окуялышкан жана аналитиканын сизби арктикий системаларга тарап киритишга қолданууга мүмкіндиги маанилосун. Моделилардың башкача болушу",
+    "reference_answer": "Модени даталашкондуристлар, курганда датасерверлери, бул ыкмандан аркашта жазуусунун тарабынан сизги чыгарган жана маанилүү колдонулуштурулугун тарабынан о"
+  }
+]
