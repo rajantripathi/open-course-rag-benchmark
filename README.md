@@ -1,5 +1,18 @@
 # Open Course RAG Benchmark
 
+<!-- badges-start -->
+![License](https://img.shields.io/badge/license-CC--BY--NC--SA--4.0-blue.svg)
+![Python](https://img.shields.io/badge/python-3.10-blue.svg)
+![Last Commit](https://img.shields.io/github/last-commit/rajantripathi/open-course-rag-benchmark)
+![Stars](https://img.shields.io/github/stars/rajantripathi/open-course-rag-benchmark?style=social)
+![Issues](https://img.shields.io/github/issues/rajantripathi/open-course-rag-benchmark)
+![Code Style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)
+![rag](https://img.shields.io/badge/rag-informational.svg)
+![multilingual](https://img.shields.io/badge/multilingual-informational.svg)
+![openstax](https://img.shields.io/badge/openstax-informational.svg)
+<!-- badges-end -->
+
+
 Open multilingual benchmark and pipeline for retrieval-grounded educational question answering in higher education.
 
 ## Scope

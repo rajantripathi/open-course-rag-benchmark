@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, benchmark, or dataset in your research, please cite it as below."
+title: "Open Course RAG Benchmark: Multilingual Higher-Education QA"
+abstract: >
+  Open multilingual benchmark for retrieval-grounded educational QA in higher education.
+authors:
+  - family-names: "Tripathi"
+    given-names: "Rajan Prasad"
+    email: "rajan.tripathi@aut-edu.uz"
+    affiliation: "AUT AI2 Lab / Bikal Tech Transfer, Tashkent, Uzbekistan"
+type: software
+version: "0.1.0"
+date-released: "2026-06-29"
+license: "CC-BY-NC-SA-4.0"
+repository-code: "https://github.com/rajantripathi/open-course-rag-benchmark"
+keywords:
+  - "rag"
+  - "benchmark"
+  - "multilingual"
+  - "openstax"
+  - "higher-education"
+  - "uzbek"
+  - "hybrid-retrieval"
